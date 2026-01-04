@@ -22,6 +22,7 @@ private:
 
     Socket* control_socket;
     Socket* data_socket;
+    string last_command;  // Track last command for logging
 
     // Server commands
     void get(const string& filename);
@@ -42,7 +43,7 @@ private:
     // Helper methods
     void help();
     void sendRequest(const string& cmd, const string& args = "");
-    FTPProtocol::Response receiveResponse();
+    FTPProtocol::Response receiveResponse(bool log = true);
 
 public:
     FTPClient(const string& host_name, int port_number, const string& user_name, const string& password);

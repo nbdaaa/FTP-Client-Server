@@ -23,6 +23,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <ctime>
 
 using namespace std;
 
@@ -51,5 +52,8 @@ string replaceAllOccurences(string str, string search, const string replace);
 // Command parsing
 bool parseCommand(string command, string& cmd, string& args);
 bool parseCommand(string command, string& cmd, vector<string>& flags, vector<string>& args);
+
+// Get current time in hh:mm:ss format
+string getCurrentTime();
 
 #endif

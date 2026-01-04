@@ -41,6 +41,7 @@ void FTPServer::start() {
 
 void FTPServer::communicate(Socket& client) {
     ClientSession session;
+    string clientIP = client.host();
 
     try {
         // Send welcome message
@@ -51,7 +52,7 @@ void FTPServer::communicate(Socket& client) {
             string cmd, args;
 
             if (parseCommand(data, cmd, args)) {
-                cout << "Received Command: " << cmd << endl;
+                cout << getCurrentTime() << " " << cmd << " " << clientIP << endl;
 
                 // Command dispatch
                 if (cmd == "USER") {

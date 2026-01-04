@@ -24,8 +24,8 @@ void FTPClient::start() {
         control_socket = new Socket(host, port);
 
         // Receive welcome message
+        last_command = "CONNECT";
         FTPProtocol::Response resp = receiveResponse();
-        cout << resp.message;
 
         // Send USER command
         sendRequest("USER", user);
@@ -34,7 +34,6 @@ void FTPClient::start() {
         // Send PASS command
         sendRequest("PASS", passwd);
         resp = receiveResponse();
-        cout << resp.message;
 
         if (resp.code != 230) {
             cout << "Re-enter User Name: ";
@@ -192,7 +191,6 @@ void FTPClient::get(const string& filename) {
     // Switch to binary mode
     sendRequest("TYPE", "I");
     FTPProtocol::Response resp = receiveResponse();
-    cout << resp.message;
     if (resp.code != 200) {
         return;
     }
@@ -206,7 +204,6 @@ void FTPClient::get(const string& filename) {
     // Request file
     sendRequest("RETR", filename);
     resp = receiveResponse();
-    cout << resp.message;
     if (resp.code != 150) {
         return;
     }
@@ -230,7 +227,6 @@ void FTPClient::get(const string& filename) {
 
     resp = receiveResponse();
     out.close();
-    cout << resp.message;
 
     // Print file size
     cout << "File Size: ";
@@ -258,7 +254,6 @@ void FTPClient::put(const string& filename) {
     // Switch to binary mode
     sendRequest("TYPE", "I");
     FTPProtocol::Response resp = receiveResponse();
-    cout << resp.message;
     if (resp.code != 200) {
         return;
     }
@@ -272,7 +267,6 @@ void FTPClient::put(const string& filename) {
     // Send STOR command
     sendRequest("STOR", getFileName(filename));
     resp = receiveResponse();
-    cout << resp.message;
     if (resp.code != 150) {
         return;
     }
@@ -295,16 +289,11 @@ void FTPClient::put(const string& filename) {
     data_socket = NULL;
 
     resp = receiveResponse();
-    cout << resp.message;
 }
 
 string FTPClient::pwd(bool print) {
     sendRequest("PWD");
-    FTPProtocol::Response resp = receiveResponse();
-
-    if (print) {
-        cout << resp.message;
-    }
+    FTPProtocol::Response resp = receiveResponse(print);
 
     // Extract directory from quotes
     size_t start = resp.message.find("\"");
@@ -318,11 +307,7 @@ string FTPClient::pwd(bool print) {
 
 int FTPClient::cd(const string& path, bool print) {
     sendRequest("CWD", path);
-    FTPProtocol::Response resp = receiveResponse();
-
-    if (print) {
-        cout << resp.message;
-    }
+    FTPProtocol::Response resp = receiveResponse(print);
 
     return resp.code;
 }
@@ -338,7 +323,6 @@ void FTPClient::ls(const vector<string>& flags, const vector<string>& args) {
 
     sendRequest("LIST", arg_str);
     FTPProtocol::Response resp = receiveResponse();
-    cout << resp.message;
 
     if (resp.code == 150) {
         // Receive directory listing
@@ -355,17 +339,12 @@ void FTPClient::ls(const vector<string>& flags, const vector<string>& args) {
         data_socket = NULL;
 
         resp = receiveResponse();
-        cout << resp.message;
     }
 }
 
 int FTPClient::mkd(const string& dirname, bool print) {
     sendRequest("MKD", dirname);
-    FTPProtocol::Response resp = receiveResponse();
-
-    if (print) {
-        cout << resp.message;
-    }
+    FTPProtocol::Response resp = receiveResponse(print);
 
     return resp.code;
 }
@@ -393,7 +372,6 @@ int FTPClient::pasv() {
 bool FTPClient::quit() {
     sendRequest("QUIT");
     FTPProtocol::Response resp = receiveResponse();
-    cout << resp.message;
     return resp.code == 221;
 }
 
@@ -463,11 +441,20 @@ void FTPClient::help() {
 }
 
 void FTPClient::sendRequest(const string& cmd, const string& args) {
+    last_command = cmd;  // Store command for logging
     string request = FTPProtocol::formatRequest(cmd, args);
     *control_socket << request;
 }
 
-FTPProtocol::Response FTPClient::receiveResponse() {
+FTPProtocol::Response FTPClient::receiveResponse(bool log) {
     string data = control_socket->receive();
-    return FTPProtocol::parseResponse(data);
+    FTPProtocol::Response resp = FTPProtocol::parseResponse(data);
+
+    // Log: hh:mm:ss <Command> <Server Response>
+    if (log) {
+        cout << getCurrentTime() << " " << last_command << " "
+             << resp.code << " " << resp.message;
+    }
+
+    return resp;
 }

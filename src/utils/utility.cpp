@@ -214,3 +214,12 @@ bool parseCommand(string command, string& cmd, string& args) {
     }
     return true;
 }
+
+// Get current time in hh:mm:ss format
+string getCurrentTime() {
+    time_t now = time(0);
+    struct tm* timeinfo = localtime(&now);
+    char buffer[9];
+    strftime(buffer, sizeof(buffer), "%H:%M:%S", timeinfo);
+    return string(buffer);
+}
