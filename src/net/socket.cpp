@@ -147,16 +147,6 @@ void Socket::close() {
     }
 }
 
-Socket& Socket::operator<<(const string& data) {
-    send(data);
-    return *this;
-}
-
-Socket& Socket::operator>>(string& data) {
-    data = receive();
-    return *this;
-}
-
 int Socket::port() const {
     if (!isValid()) {
         return -1;

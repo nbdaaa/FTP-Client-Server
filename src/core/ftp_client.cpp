@@ -279,7 +279,7 @@ void FTPClient::put(const string& filename) {
         char buf[MAXRECV + 1];
         in.read(buf, read_sz);
         string data(buf, read_sz);
-        *data_socket << data;
+        data_socket->send(data);
         length -= read_sz;
     }
 
@@ -443,7 +443,7 @@ void FTPClient::help() {
 void FTPClient::sendRequest(const string& cmd, const string& args) {
     last_command = cmd;  // Store command for logging
     string request = FTPProtocol::formatRequest(cmd, args);
-    *control_socket << request;
+    control_socket->send(request);
 }
 
 FTPProtocol::Response FTPClient::receiveResponse(bool log) {
