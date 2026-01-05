@@ -38,7 +38,7 @@ void FTPClient::start() {
             cin >> user;
             cout << "Re-enter Password: ";
             passwd = getPassword();
-            delete control_socket;
+            control_socket.close();
             start();
         }
     } catch (SocketException& e) {
