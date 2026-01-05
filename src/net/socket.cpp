@@ -6,7 +6,7 @@
 
 using namespace std;
 
-// Default constructor
+// Khởi tạo socket mặc định với file descriptor = -1 
 Socket::Socket() : _sockfd(-1), _is_server(false) {
     memset(&_addr, 0, sizeof(_addr));
 }
@@ -21,12 +21,10 @@ Socket::Socket(int port) : _sockfd(-1), _is_server(true) {
     _addr.sin_addr.s_addr = INADDR_ANY;
     _addr.sin_port = htons(port);
 
-    // Bind socket
     if (::bind(_sockfd, (struct sockaddr*)&_addr, sizeof(_addr)) == -1) {
         throw SocketException("Failed to bind socket");
     }
 
-    // Listen for connections
     if (::listen(_sockfd, BACKLOG) == -1) {
         throw SocketException("Failed to listen on socket");
     }
@@ -49,7 +47,6 @@ Socket::Socket(const string& host, int port) : _sockfd(-1), _is_server(false) {
 
     memcpy(&_addr.sin_addr, he->h_addr_list[0], he->h_length);
 
-    // Connect to server
     if (::connect(_sockfd, (struct sockaddr*)&_addr, sizeof(_addr)) == -1) {
         throw SocketException("Failed to connect to " + host);
     }
@@ -61,16 +58,16 @@ Socket::~Socket() {
     }
 }
 
-// Move constructor
+// Khởi tạo di chuyển socket an toàn
 Socket::Socket(Socket&& other) : _sockfd(other._sockfd), _addr(other._addr), _is_server(other._is_server) {
-    other._sockfd = -1;  // Invalidate the source socket
+    other._sockfd = -1;  // Invalid socket nguồn di chuyển
 }
 
 // Move assignment operator
 Socket& Socket::operator=(Socket&& other) {
     if (this != &other) {
         // Close current socket if valid
-        if (isValid()) {
+        if (isValid()) {    
             ::close(_sockfd);
         }
 
