@@ -86,12 +86,18 @@ Socket& Socket::operator=(Socket&& other) {
 }
 
 void Socket::createSocket() {
-    _sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    _sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (!isValid()) {
         throw SocketException("Failed to create socket");
     }
 
-    // Set socket options
+    // Khởi tạo tùy chọn cho socket. 
+    // Ở đây sử dụng SO_REUSEADDR để cho phép tái sử dụng địa chỉ và port ngay lập tức
+    // Trong trường hợp không có SO_REUSEADDR, ta có ví dụ sau:
+    // 1. Đang chạy FTP server ở port 21
+    // 2. Dừng server (Ctrl+C chẳng hạn)
+    // 3. Chạy lại server ngay lập tức
+    // --> Sinh ra lỗi: "Address already in use" (bind failed). Lý do là vì khi TCP connection đóng, socket vẫn ở trạng thái TIME_WAIT trong 2-4 phút để hoàn thành các tác dụng chưa xong, khi đó không thể bind lại vào port 
     int on = 1;
     if (setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
         throw SocketException("Failed to set socket options");

@@ -20,10 +20,10 @@ private:
     struct sockaddr_in _addr;
     bool _is_server;
 
-    bool isValid() const;
     void createSocket();
 
 public:
+    bool isValid() const;
     // Server constructor
     explicit Socket(int port); // Đặt thêm explicit vào để tránh ép kiểu ngầm định. Ví dụ Socket s = 8080 --> Lỗi. Socket s(8080) --> Oke
 
