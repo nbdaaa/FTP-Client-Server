@@ -108,8 +108,6 @@ void MainWindow::setupRemoteBrowser()
         contextMenu.addAction(refreshRemoteAction);
         contextMenu.addSeparator();
         contextMenu.addAction(createRemoteFolderAction);
-        contextMenu.addAction(renameRemoteAction);
-        contextMenu.addAction(deleteRemoteAction);
         contextMenu.exec(remoteBrowser->mapToGlobal(pos));
     });
 
@@ -155,16 +153,8 @@ void MainWindow::createActions()
     deleteLocalAction = new QAction(QIcon::fromTheme("edit-delete"), "Delete", this);
     connect(deleteLocalAction, &QAction::triggered, this, &MainWindow::onDeleteLocal);
 
-    deleteRemoteAction = new QAction(QIcon::fromTheme("edit-delete"), "Delete", this);
-    deleteRemoteAction->setEnabled(false);
-    connect(deleteRemoteAction, &QAction::triggered, this, &MainWindow::onDeleteRemote);
-
     renameLocalAction = new QAction(QIcon::fromTheme("edit-rename"), "Rename", this);
     connect(renameLocalAction, &QAction::triggered, this, &MainWindow::onRenameLocal);
-
-    renameRemoteAction = new QAction(QIcon::fromTheme("edit-rename"), "Rename", this);
-    renameRemoteAction->setEnabled(false);
-    connect(renameRemoteAction, &QAction::triggered, this, &MainWindow::onRenameRemote);
 }
 
 void MainWindow::createToolBar()
@@ -219,8 +209,6 @@ void MainWindow::setRemoteActionsEnabled(bool enabled)
 {
     refreshRemoteAction->setEnabled(enabled);
     createRemoteFolderAction->setEnabled(enabled);
-    deleteRemoteAction->setEnabled(enabled);
-    renameRemoteAction->setEnabled(enabled);
 }
 
 QString MainWindow::joinPath(const QString &base, const QString &name) const
@@ -334,9 +322,7 @@ void MainWindow::onConnect()
         connect(this, &MainWindow::requestUpload, ftpWorker, &FTPWorker::uploadFile, Qt::QueuedConnection);
         connect(this, &MainWindow::requestDownload, ftpWorker, &FTPWorker::downloadFile, Qt::QueuedConnection);
         connect(this, &MainWindow::requestChangeDirectory, ftpWorker, &FTPWorker::changeRemoteDirectory, Qt::QueuedConnection);
-        connect(this, &MainWindow::requestDeleteRemote, ftpWorker, &FTPWorker::deleteRemoteFile, Qt::QueuedConnection);
         connect(this, &MainWindow::requestCreateRemoteDir, ftpWorker, &FTPWorker::createRemoteDirectory, Qt::QueuedConnection);
-        connect(this, &MainWindow::requestRenameRemote, ftpWorker, &FTPWorker::renameRemoteFile, Qt::QueuedConnection);
 
         ftpThread->start();
 
@@ -497,31 +483,6 @@ void MainWindow::onDeleteLocal()
     }
 }
 
-void MainWindow::onDeleteRemote()
-{
-    QList<QTreeWidgetItem*> selectedItems = remoteBrowser->selectedItems();
-    if (selectedItems.isEmpty()) {
-        return;
-    }
-
-    QMessageBox::StandardButton reply = QMessageBox::question(this, "Delete",
-        "Are you sure you want to delete the selected items?",
-        QMessageBox::Yes | QMessageBox::No);
-
-    if (reply == QMessageBox::Yes) {
-        for (QTreeWidgetItem *item : selectedItems) {
-            QString fileName = item->text(0);
-
-            if (fileName == "..") {
-                continue;
-            }
-
-            // Use just the filename since we're in the right directory on the server
-            emit requestDeleteRemote(fileName);
-        }
-    }
-}
-
 void MainWindow::onCreateLocalFolder()
 {
     bool ok;
@@ -586,29 +547,6 @@ void MainWindow::onRenameLocal()
         } else {
             QMessageBox::warning(this, "Error", "Failed to rename");
         }
-    }
-}
-
-void MainWindow::onRenameRemote()
-{
-    QTreeWidgetItem *item = remoteBrowser->currentItem();
-    if (!item) {
-        return;
-    }
-
-    QString oldName = item->text(0);
-
-    if (oldName == "..") {
-        return;
-    }
-
-    bool ok;
-    QString newName = QInputDialog::getText(this, "Rename",
-        "New name:", QLineEdit::Normal, oldName, &ok);
-
-    if (ok && !newName.isEmpty() && newName != oldName) {
-        // Use just the filenames since we're in the right directory on the server
-        emit requestRenameRemote(oldName, newName);
     }
 }
 

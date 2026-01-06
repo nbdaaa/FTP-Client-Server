@@ -142,16 +142,6 @@ void FTPWorker::downloadFile(const QString &remotePath, const QString &localPath
     }
 }
 
-void FTPWorker::deleteRemoteFile(const QString &path)
-{
-    if (!connected || !ftpClient) {
-        return;
-    }
-
-    emit statusMessage("Delete operation not yet implemented in FTP client");
-    Q_UNUSED(path);
-}
-
 void FTPWorker::createRemoteDirectory(const QString &path)
 {
     if (!connected || !ftpClient) {
@@ -172,16 +162,4 @@ void FTPWorker::createRemoteDirectory(const QString &path)
         emit fileTransferError(QString("Error creating directory: %1").arg(e.what()));
     }
 }
-
-void FTPWorker::renameRemoteFile(const QString &oldPath, const QString &newPath)
-{
-    if (!connected || !ftpClient) {
-        return;
-    }
-
-    emit statusMessage("Rename operation not yet implemented in FTP client");
-    Q_UNUSED(oldPath);
-    Q_UNUSED(newPath);
-}
-
 

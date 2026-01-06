@@ -30,11 +30,9 @@ private slots:
     void onLocalItemDoubleClicked(QTreeWidgetItem *item, int column);
     void onRemoteItemDoubleClicked(QTreeWidgetItem *item, int column);
     void onDeleteLocal();
-    void onDeleteRemote();
     void onCreateLocalFolder();
     void onCreateRemoteFolder();
     void onRenameLocal();
-    void onRenameRemote();
     void onConnectionEstablished(const QString &message);
     void onConnectionFailed(const QString &error);
     void onRemoteListReceived(const QStringList &items);
@@ -52,9 +50,7 @@ signals:
     void requestUpload(const QString &localPath, const QString &remotePath);
     void requestDownload(const QString &remotePath, const QString &localPath);
     void requestChangeDirectory(const QString &path);
-    void requestDeleteRemote(const QString &path);
     void requestCreateRemoteDir(const QString &path);
-    void requestRenameRemote(const QString &oldPath, const QString &newPath);
 
 private:
     void setupUI();
@@ -91,9 +87,7 @@ private:
     QAction *createLocalFolderAction;
     QAction *createRemoteFolderAction;
     QAction *deleteLocalAction;
-    QAction *deleteRemoteAction;
     QAction *renameLocalAction;
-    QAction *renameRemoteAction;
 
     // FTP Client
     QString currentLocalPath;

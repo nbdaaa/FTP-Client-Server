@@ -23,9 +23,7 @@ public slots:
     void listRemoteDirectory(const QString &path);
     void uploadFile(const QString &localPath, const QString &remotePath);
     void downloadFile(const QString &remotePath, const QString &localPath);
-    void deleteRemoteFile(const QString &path);
     void createRemoteDirectory(const QString &path);
-    void renameRemoteFile(const QString &oldPath, const QString &newPath);
 
 signals:
     void connectionEstablished(const QString &message);
