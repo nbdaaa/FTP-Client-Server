@@ -16,7 +16,8 @@ SOURCES += \
     src/core/ftp_server.cpp \
     src/core/ftp_protocol.cpp \
     src/net/socket.cpp \
-    src/utils/utility.cpp
+    src/utils/utility.cpp \
+    src/utils/ftp_listing_parser.cpp
 
 HEADERS += \
     src/gui/mainwindow.h \
@@ -27,7 +28,8 @@ HEADERS += \
     src/core/ftp_protocol.h \
     src/net/socket.h \
     src/net/socket_exception.h \
-    src/utils/utility.h
+    src/utils/utility.h \
+    src/utils/ftp_listing_parser.h
 
 INCLUDEPATH += \
     src/gui \

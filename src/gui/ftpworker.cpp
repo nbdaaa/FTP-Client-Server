@@ -1,9 +1,9 @@
 #include "ftpworker.h"
 
 #include <QFileInfo>
-#include <QRegExp>
 
 #include "../core/ftp_client.h"
+#include "../utils/ftp_listing_parser.h"
 
 FTPWorker::FTPWorker(QObject *parent)
     : QObject(parent)
@@ -94,38 +94,10 @@ void FTPWorker::listRemoteDirectory(const QString &path)
 
     try {
         std::string listing = ftpClient->list();
-        QStringList items;
-
-        if (listing.empty()) {
-            emit remoteListReceived(items);
-            return;
-        }
-
-        QString qListing = QString::fromStdString(listing);
-        QStringList lines = qListing.split('\n', Qt::SkipEmptyParts);
-
-        for (const QString &line : lines) {
-            QString trimmed = line.trimmed();
-            if (trimmed.isEmpty()) {
-                continue;
-            }
-
-            // Parse Unix-style directory listing (simplified)
-            // Format: drwxr-xr-x 2 user group 4096 Jan 1 12:00 filename
-            QStringList parts = trimmed.split(QRegExp("\\s+"), Qt::SkipEmptyParts);
-
-            if (parts.size() >= 9) {
-                QString filename = parts.mid(8).join(" ");
-                QString permissions = parts[0];
-                bool isDir = permissions.startsWith('d');
-
-                QString size = isDir ? "DIR" : parts[4];
-                QString date = parts[5] + " " + parts[6] + " " + parts[7];
-
-                items.append(filename + "\t" + size + "\t" + date);
-            }
-        }
-
+        
+        // Use FTPListingParser to parse the listing
+        QStringList items = FTPListingParser::parseListing(listing);
+        
         emit remoteListReceived(items);
     } catch (const std::exception &e) {
         emit statusMessage(QString("Error listing directory: %1").arg(e.what()));
