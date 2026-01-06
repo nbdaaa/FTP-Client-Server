@@ -450,7 +450,7 @@ FTPProtocol::Response FTPClient::receiveResponse(bool log) {
     string data = control_socket->receive();
     FTPProtocol::Response resp = FTPProtocol::parseResponse(data);
 
-    // Log: hh:mm:ss <Command> <Server Response>
+    // Log format: hh:mm:ss <Command> <Server Response>
     if (log) {
         cout << getCurrentTime() << " " << last_command << " "
              << resp.code << " " << resp.message;
