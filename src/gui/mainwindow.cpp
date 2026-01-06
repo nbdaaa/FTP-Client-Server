@@ -202,6 +202,39 @@ void MainWindow::createStatusBar()
     statusBar()->addPermanentWidget(progressBar);
 }
 
+void MainWindow::updateConnectionState(bool connectedState)
+{
+    isConnected = connectedState;
+
+    connectAction->setEnabled(!connectedState);
+    disconnectAction->setEnabled(connectedState);
+
+    uploadAction->setEnabled(connectedState);
+    downloadAction->setEnabled(connectedState);
+
+    setRemoteActionsEnabled(connectedState);
+}
+
+void MainWindow::setRemoteActionsEnabled(bool enabled)
+{
+    refreshRemoteAction->setEnabled(enabled);
+    createRemoteFolderAction->setEnabled(enabled);
+    deleteRemoteAction->setEnabled(enabled);
+    renameRemoteAction->setEnabled(enabled);
+}
+
+QString MainWindow::joinPath(const QString &base, const QString &name) const
+{
+    if (base.isEmpty())
+        return name;
+
+    QString path = base;
+    if (!path.endsWith('/') && !path.endsWith('\\')) {
+        path += '/';
+    }
+    return path + name;
+}
+
 void MainWindow::loadLocalDirectory(const QString &path)
 {
     localBrowser->clear();
@@ -248,7 +281,7 @@ void MainWindow::loadRemoteDirectory(const QString &path)
     }
 
     statusLabel->setText("Loading remote directory...");
-    ftpWorker->listRemoteDirectory(currentRemotePath);
+    emit requestListRemote(currentRemotePath);
 }
 
 QString MainWindow::formatFileSize(qint64 size)
@@ -284,6 +317,7 @@ void MainWindow::onConnect()
         connect(ftpThread, &QThread::finished, ftpWorker, &QObject::deleteLater);
         connect(this, &MainWindow::destroyed, ftpThread, &QThread::quit);
 
+        // Connect FTPWorker signals to MainWindow slots (auto connection type)
         connect(ftpWorker, &FTPWorker::connectionEstablished, this, &MainWindow::onConnectionEstablished);
         connect(ftpWorker, &FTPWorker::connectionFailed, this, &MainWindow::onConnectionFailed);
         connect(ftpWorker, &FTPWorker::remoteListReceived, this, &MainWindow::onRemoteListReceived);
@@ -292,17 +326,29 @@ void MainWindow::onConnect()
         connect(ftpWorker, &FTPWorker::fileTransferError, this, &MainWindow::onFileTransferError);
         connect(ftpWorker, &FTPWorker::statusMessage, this, &MainWindow::onStatusMessage);
 
+        // Connect MainWindow request signals to FTPWorker slots with QueuedConnection
+        // This ensures operations run in the worker thread, not the GUI thread
+        connect(this, &MainWindow::requestConnect, ftpWorker, &FTPWorker::connectToServer, Qt::QueuedConnection);
+        connect(this, &MainWindow::requestDisconnect, ftpWorker, &FTPWorker::disconnectFromServer, Qt::QueuedConnection);
+        connect(this, &MainWindow::requestListRemote, ftpWorker, &FTPWorker::listRemoteDirectory, Qt::QueuedConnection);
+        connect(this, &MainWindow::requestUpload, ftpWorker, &FTPWorker::uploadFile, Qt::QueuedConnection);
+        connect(this, &MainWindow::requestDownload, ftpWorker, &FTPWorker::downloadFile, Qt::QueuedConnection);
+        connect(this, &MainWindow::requestChangeDirectory, ftpWorker, &FTPWorker::changeRemoteDirectory, Qt::QueuedConnection);
+        connect(this, &MainWindow::requestDeleteRemote, ftpWorker, &FTPWorker::deleteRemoteFile, Qt::QueuedConnection);
+        connect(this, &MainWindow::requestCreateRemoteDir, ftpWorker, &FTPWorker::createRemoteDirectory, Qt::QueuedConnection);
+        connect(this, &MainWindow::requestRenameRemote, ftpWorker, &FTPWorker::renameRemoteFile, Qt::QueuedConnection);
+
         ftpThread->start();
 
         statusLabel->setText("Connecting to server...");
-        ftpWorker->connectToServer(ftpHost, ftpPort, ftpUsername, password);
+        emit requestConnect(ftpHost, ftpPort, ftpUsername, password);
     }
 }
 
 void MainWindow::onDisconnect()
 {
     if (ftpWorker) {
-        ftpWorker->disconnectFromServer();
+        emit requestDisconnect();
     }
 
     if (ftpThread) {
@@ -312,20 +358,13 @@ void MainWindow::onDisconnect()
     }
 
     ftpWorker = nullptr;
-    isConnected = false;
+    updateConnectionState(false);
 
     remoteBrowser->clear();
     connectionLabel->setText("Not connected");
     statusLabel->setText("Disconnected");
 
-    connectAction->setEnabled(true);
-    disconnectAction->setEnabled(false);
-    uploadAction->setEnabled(false);
-    downloadAction->setEnabled(false);
-    refreshRemoteAction->setEnabled(false);
-    createRemoteFolderAction->setEnabled(false);
-    deleteRemoteAction->setEnabled(false);
-    renameRemoteAction->setEnabled(false);
+    setRemoteActionsEnabled(false);
 }
 
 void MainWindow::onRefreshLocal()
@@ -359,7 +398,7 @@ void MainWindow::onUpload()
         if (info.isFile()) {
             // Use just the filename since we're in the right directory on the server
             statusLabel->setText("Uploading " + fileName + "...");
-            ftpWorker->uploadFile(localPath, fileName);
+            emit requestUpload(localPath, fileName);
         }
     }
 }
@@ -380,14 +419,10 @@ void MainWindow::onDownload()
         }
 
         // Use just the filename since we're in the right directory on the server
-        QString localPath = currentLocalPath;
-        if (!localPath.endsWith('/') && !localPath.endsWith('\\')) {
-            localPath += '/';
-        }
-        localPath += fileName;
+        QString localPath = joinPath(currentLocalPath, fileName);
 
         statusLabel->setText("Downloading " + fileName + "...");
-        ftpWorker->downloadFile(fileName, localPath);
+        emit requestDownload(fileName, localPath);
     }
 }
 
@@ -409,7 +444,7 @@ void MainWindow::onRemoteItemDoubleClicked(QTreeWidgetItem *item, int column)
 
     if (fileName == "..") {
         // Go to parent directory
-        ftpWorker->changeRemoteDirectory("..");
+        emit requestChangeDirectory("..");
 
         // Update local tracking
         QStringList parts = currentRemotePath.split('/', Qt::SkipEmptyParts);
@@ -422,7 +457,7 @@ void MainWindow::onRemoteItemDoubleClicked(QTreeWidgetItem *item, int column)
         }
     } else if (item->text(1) == "<DIR>") {
         // Enter directory
-        ftpWorker->changeRemoteDirectory(fileName);
+        emit requestChangeDirectory(fileName);
 
         // Update local tracking
         if (!currentRemotePath.endsWith('/')) {
@@ -482,7 +517,7 @@ void MainWindow::onDeleteRemote()
             }
 
             // Use just the filename since we're in the right directory on the server
-            ftpWorker->deleteRemoteFile(fileName);
+            emit requestDeleteRemote(fileName);
         }
     }
 }
@@ -494,11 +529,7 @@ void MainWindow::onCreateLocalFolder()
         "Folder name:", QLineEdit::Normal, "", &ok);
 
     if (ok && !folderName.isEmpty()) {
-        QString path = currentLocalPath;
-        if (!path.endsWith('/') && !path.endsWith('\\')) {
-            path += '/';
-        }
-        path += folderName;
+        QString path = joinPath(currentLocalPath, folderName);
 
         if (QDir().mkdir(path)) {
             onRefreshLocal();
@@ -521,7 +552,7 @@ void MainWindow::onCreateRemoteFolder()
             newPath += '/';
         newPath += folderName;
 
-        ftpWorker->createRemoteDirectory(newPath);
+        emit requestCreateRemoteDir(newPath);
         statusLabel->setText("Creating remote folder: " + newPath);
         // refresh view to see the new folder once server responds
         onRefreshRemote();
@@ -577,24 +608,15 @@ void MainWindow::onRenameRemote()
 
     if (ok && !newName.isEmpty() && newName != oldName) {
         // Use just the filenames since we're in the right directory on the server
-        ftpWorker->renameRemoteFile(oldName, newName);
+        emit requestRenameRemote(oldName, newName);
     }
 }
 
 void MainWindow::onConnectionEstablished(const QString &message)
 {
-    isConnected = true;
+    updateConnectionState(true);
     connectionLabel->setText("Connected to " + ftpHost + ":" + QString::number(ftpPort));
     statusLabel->setText(message);
-
-    connectAction->setEnabled(false);
-    disconnectAction->setEnabled(true);
-    uploadAction->setEnabled(true);
-    downloadAction->setEnabled(true);
-    refreshRemoteAction->setEnabled(true);
-    createRemoteFolderAction->setEnabled(true);
-    deleteRemoteAction->setEnabled(true);
-    renameRemoteAction->setEnabled(true);
 
     loadRemoteDirectory(currentRemotePath);
 }
