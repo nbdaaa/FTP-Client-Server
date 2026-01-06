@@ -515,8 +515,15 @@ void MainWindow::onCreateRemoteFolder()
         "Folder name:", QLineEdit::Normal, "", &ok);
 
     if (ok && !folderName.isEmpty()) {
-        // Use just the folder name since we're in the right directory on the server
-        ftpWorker->createRemoteDirectory(folderName);
+        QString newPath = currentRemotePath;
+        if (!newPath.endsWith('/'))
+            newPath += '/';
+        newPath += folderName;
+
+        ftpWorker->createRemoteDirectory(newPath);
+        statusLabel->setText("Creating remote folder: " + newPath);
+        // refresh view to see the new folder once server responds
+        onRefreshRemote();
     }
 }
 
@@ -844,6 +851,8 @@ void FTPWorker::createRemoteDirectory(const QString &path)
 
         if (ftpClient->mkdir(path.toStdString())) {
             emit fileTransferComplete("Directory created: " + path);
+            // reload listing to reflect the new folder
+            listRemoteDirectory(path);
         } else {
             emit fileTransferError("Failed to create directory: " + path);
         }
