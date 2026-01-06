@@ -11,6 +11,7 @@ SOURCES += \
     src/gui/main_gui.cpp \
     src/gui/mainwindow.cpp \
     src/gui/connectiondialog.cpp \
+    src/gui/ftpworker.cpp \
     src/core/ftp_client.cpp \
     src/core/ftp_server.cpp \
     src/core/ftp_protocol.cpp \
@@ -20,6 +21,7 @@ SOURCES += \
 HEADERS += \
     src/gui/mainwindow.h \
     src/gui/connectiondialog.h \
+    src/gui/ftpworker.h \
     src/core/ftp_client.h \
     src/core/ftp_server.h \
     src/core/ftp_protocol.h \
