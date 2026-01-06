@@ -1,0 +1,32 @@
+# Makefile for CLI FTP Client/Server
+
+CXX = g++
+CXXFLAGS = -std=c++11 -Wall
+TARGET = cpftp
+
+SRC_DIR = src
+CORE_DIR = $(SRC_DIR)/core
+NET_DIR = $(SRC_DIR)/net
+UTILS_DIR = $(SRC_DIR)/utils
+
+SOURCES = $(SRC_DIR)/main.cpp \
+          $(CORE_DIR)/ftp_client.cpp \
+          $(CORE_DIR)/ftp_server.cpp \
+          $(CORE_DIR)/ftp_protocol.cpp \
+          $(NET_DIR)/socket.cpp \
+          $(UTILS_DIR)/utility.cpp
+
+OBJECTS = $(SOURCES:.cpp=.o)
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJECTS)
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(OBJECTS) $(TARGET)
+
+.PHONY: all clean

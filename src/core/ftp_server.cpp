@@ -45,7 +45,7 @@ void FTPServer::communicate(Socket& client) {
 
     try {
         // Send welcome message
-        sendResponse(client, 200, "(Cp.FTP v1.0)");
+        sendResponse(client, 220, "(Cp.FTP v1.0)");
 
         while (true) {
             string data = client.receive();

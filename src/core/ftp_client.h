@@ -32,7 +32,6 @@ private:
     void ls(const vector<string>& flags, const vector<string>& args);
     int mkd(const string& dirname, bool print = true);
     int pasv();
-    bool quit();
 
     // Client-side commands (prefixed with !)
     string _pwd(bool print = true);
@@ -46,10 +45,22 @@ private:
     FTPProtocol::Response receiveResponse(bool log = true);
 
 public:
-    FTPClient(const string& host_name, int port_number, const string& user_name, const string& password);
+    FTPClient(const string& host_name, int port_number, const string& user_name = "", const string& password = "");
     ~FTPClient();
     void start();
     void communicate();
+
+    // GUI-friendly public methods
+    bool connect();
+    bool login(const string& username, const string& password);
+    string list();
+    bool get(const string& remotePath, const string& localPath);
+    bool put(const string& localPath, const string& remotePath);
+    bool mkdir(const string& path);
+    bool changeDirectory(const string& path);
+    string getCurrentDirectory();
+    bool quit();
+    bool isConnected() const;
 };
 
 #endif

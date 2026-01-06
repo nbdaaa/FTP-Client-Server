@@ -458,3 +458,226 @@ FTPProtocol::Response FTPClient::receiveResponse(bool log) {
 
     return resp;
 }
+
+// GUI-friendly public method implementations
+bool FTPClient::connect() {
+    try {
+        control_socket = new Socket(host, port);
+
+        // Receive welcome message
+        last_command = "CONNECT";
+        FTPProtocol::Response resp = receiveResponse(false);
+
+        return (resp.code == 220);
+    } catch (SocketException& e) {
+        return false;
+    }
+}
+
+bool FTPClient::login(const string& username, const string& password) {
+    user = username;
+    passwd = password;
+
+    try {
+        // Send USER command
+        sendRequest("USER", user);
+        FTPProtocol::Response resp = receiveResponse(false);
+
+        if (resp.code != 331 && resp.code != 230) {
+            return false;
+        }
+
+        // Send PASS command
+        sendRequest("PASS", passwd);
+        resp = receiveResponse(false);
+
+        return (resp.code == 230);
+    } catch (SocketException& e) {
+        return false;
+    }
+}
+
+string FTPClient::list() {
+    string result;
+
+    try {
+        // Enter passive mode
+        if (pasv() != 227) {
+            return "";
+        }
+
+        // Send LIST command
+        vector<string> empty_flags, empty_args;
+        sendRequest("LIST", "");
+        FTPProtocol::Response resp = receiveResponse(false);
+
+        if (resp.code == 150 || resp.code == 125) {
+            // Receive directory listing
+            while (true) {
+                string data = data_socket->receive();
+                if (data.length() == 0) {
+                    break;
+                }
+                result += data;
+            }
+
+            data_socket->close();
+            delete data_socket;
+            data_socket = NULL;
+
+            resp = receiveResponse(false);
+        }
+    } catch (SocketException& e) {
+        return "";
+    }
+
+    return result;
+}
+
+bool FTPClient::get(const string& remotePath, const string& localPath) {
+    ofstream out(localPath.c_str(), ios::out | ios::binary);
+    if (!out) {
+        return false;
+    }
+
+    try {
+        // Switch to binary mode
+        sendRequest("TYPE", "I");
+        FTPProtocol::Response resp = receiveResponse(false);
+        if (resp.code != 200) {
+            out.close();
+            return false;
+        }
+
+        // Enter passive mode
+        if (pasv() != 227) {
+            out.close();
+            return false;
+        }
+
+        // Request file
+        sendRequest("RETR", remotePath);
+        resp = receiveResponse(false);
+        if (resp.code != 150 && resp.code != 125) {
+            out.close();
+            return false;
+        }
+
+        // Receive file data
+        while (true) {
+            string data = data_socket->receive();
+            if (data.length() == 0) {
+                break;
+            }
+            out << data;
+        }
+
+        data_socket->close();
+        delete data_socket;
+        data_socket = NULL;
+
+        resp = receiveResponse(false);
+        out.close();
+
+        return (resp.code == 226);
+    } catch (SocketException& e) {
+        out.close();
+        return false;
+    }
+}
+
+bool FTPClient::put(const string& localPath, const string& remotePath) {
+    ifstream in(localPath.c_str(), ios::in | ios::binary | ios::ate);
+    if (!in) {
+        return false;
+    }
+
+    streampos size = in.tellg();
+    in.seekg(0, ios::beg);
+
+    try {
+        // Switch to binary mode
+        sendRequest("TYPE", "I");
+        FTPProtocol::Response resp = receiveResponse(false);
+        if (resp.code != 200) {
+            in.close();
+            return false;
+        }
+
+        // Enter passive mode
+        if (pasv() != 227) {
+            in.close();
+            return false;
+        }
+
+        // Send STOR command
+        sendRequest("STOR", remotePath);
+        resp = receiveResponse(false);
+        if (resp.code != 150 && resp.code != 125) {
+            in.close();
+            return false;
+        }
+
+        // Send file data
+        char buffer[1024];
+        while (in.read(buffer, sizeof(buffer)) || in.gcount() > 0) {
+            *data_socket << string(buffer, in.gcount());
+        }
+
+        data_socket->close();
+        delete data_socket;
+        data_socket = NULL;
+
+        resp = receiveResponse(false);
+        in.close();
+
+        return (resp.code == 226);
+    } catch (SocketException& e) {
+        in.close();
+        return false;
+    }
+}
+
+bool FTPClient::mkdir(const string& path) {
+    try {
+        sendRequest("MKD", path);
+        FTPProtocol::Response resp = receiveResponse(false);
+        return (resp.code == 257);
+    } catch (SocketException& e) {
+        return false;
+    }
+}
+
+bool FTPClient::changeDirectory(const string& path) {
+    try {
+        sendRequest("CWD", path);
+        FTPProtocol::Response resp = receiveResponse(false);
+        return (resp.code == 250);
+    } catch (SocketException& e) {
+        return false;
+    }
+}
+
+string FTPClient::getCurrentDirectory() {
+    try {
+        sendRequest("PWD");
+        FTPProtocol::Response resp = receiveResponse(false);
+
+        if (resp.code == 257) {
+            // Extract directory from message like: "directory" is current directory
+            size_t start = resp.message.find('"');
+            size_t end = resp.message.find('"', start + 1);
+
+            if (start != string::npos && end != string::npos) {
+                return resp.message.substr(start + 1, end - start - 1);
+            }
+        }
+        return "";
+    } catch (SocketException& e) {
+        return "";
+    }
+}
+
+bool FTPClient::isConnected() const {
+    return (control_socket != NULL);
+}

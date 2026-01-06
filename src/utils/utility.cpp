@@ -202,6 +202,12 @@ bool parseCommand(string command, string& cmd, vector<string>& flags, vector<str
 bool parseCommand(string command, string& cmd, string& args) {
     // split command into argument and opcode.
     string::size_type beginPos = command.find_first_not_of(" \r\n", 0);
+
+    // Check if command is empty or only whitespace
+    if (beginPos == string::npos) {
+        return false;
+    }
+
     string::size_type endPos = command.find_first_of(" \r\n", beginPos);
     cmd = command.substr(beginPos, endPos - beginPos);
     beginPos = command.find_first_not_of(" \r\n", endPos);

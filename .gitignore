@@ -1,2 +1,45 @@
+# Executables
 cpftp
+cpftp-gui
+*.exe
+
+# Object files
 *.o
+*.obj
+
+# Qt-generated files
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+moc_predefs.h
+
+# Qt build files
+Makefile
+!Makefile.cli
+.qmake.stash
+*.pro.user
+*.pro.user.*
+
+# Build directories
+build/
+build-*/
+debug/
+release/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Windows specific
+Thumbs.db
+desktop.ini
