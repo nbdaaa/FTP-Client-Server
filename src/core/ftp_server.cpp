@@ -3,7 +3,7 @@
 using namespace std;
 
 FTPServer::FTPServer(int port_number, const string& loginFile) {
-    cout << "Cp.FTP-Server Started" << endl;
+    cout << "FTP-Server Started" << endl;
     port = port_number;
     loadUsers(loginFile);
 }
@@ -45,7 +45,7 @@ void FTPServer::communicate(Socket& client) {
 
     try {
         // Send welcome message
-        sendResponse(client, 200, "(Cp.FTP v1.0)");
+        sendResponse(client, 200, "Welcome to FTP SERVER");
 
         while (true) {
             string data = client.receive();
@@ -192,7 +192,7 @@ void FTPServer::handleList(Socket& client, ClientSession& session, const string&
             while (pos < len) {
                 int chunk_size = min(2048, len - pos);
                 string chunk = response.substr(pos, chunk_size);
-                data_client << chunk;
+                data_client.send(chunk);
                 pos += chunk_size;
             }
 
@@ -329,7 +329,7 @@ void FTPServer::handleRetr(Socket& client, ClientSession& session, const string&
             char buf[MAXRECV + 1];
             in.read(buf, read_sz);
             string data(buf, read_sz);
-            data_client << data;
+            data_client.send(data);
             length -= read_sz;
         }
 
@@ -352,7 +352,7 @@ void FTPServer::handleQuit(Socket& client, ClientSession& session, const string&
 
 void FTPServer::sendResponse(Socket& client, int code, const string& message) {
     string response = FTPProtocol::formatResponse(code, message);
-    client << response;
+    client.send(response);
 }
 
 string FTPServer::getCurrentDir() {

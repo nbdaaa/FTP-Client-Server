@@ -2,26 +2,24 @@
 
 using namespace std;
 
-FTPClient::FTPClient(const string& host_name, int port_number, const string& user_name, const string& password) {
-    cout << "\nCp.FTP-Client Started\n" << endl;
+FTPClient::FTPClient(const string& host_name, int port_number, const string& user_name, const string& password)
+    : control_socket(), data_socket() {
+    cout << "\nFTP-Client Started\n" << endl;
     host = host_name;
     user = user_name;
     passwd = password;
     port = port_number;
-    control_socket = NULL;
-    data_socket = NULL;
 }
 
 FTPClient::~FTPClient() {
-    if (control_socket) delete control_socket;
-    if (data_socket) delete data_socket;
+    // Socket destructor automatically closes the socket
 }
 
 void FTPClient::start() {
     cout << "Connecting to Host: " << host << " Port: " << port << endl;
 
     try {
-        control_socket = new Socket(host, port);
+        control_socket = Socket(host, port);
 
         // Receive welcome message
         last_command = "CONNECT";
@@ -40,8 +38,8 @@ void FTPClient::start() {
             cin >> user;
             cout << "Re-enter Password: ";
             passwd = getPassword();
-            delete control_socket;
-            start();
+            control_socket.close();
+            start(); // Đệ quy lại chính hàm start của FTPClient
         }
     } catch (SocketException& e) {
         cout << "Exception occurred: " << e.description() << endl;
@@ -57,7 +55,7 @@ void FTPClient::communicate() {
         flags.clear();
         args.clear();
 
-        cout << "Cp.FTP > ";
+        cout << "FTP > ";
         getline(cin, command);
 
         if (!parseCommand(command, cmd, flags, args)) {
@@ -166,7 +164,7 @@ void FTPClient::communicate() {
         }
         else if (cmd == "quit") {
             if (quit()) {
-                control_socket->close();
+                control_socket.close();
                 return;
             } else {
                 cout << "Couldn't terminate the session." << endl;
@@ -213,7 +211,7 @@ void FTPClient::get(const string& filename) {
     // Receive file data
     double length = 0;
     while (true) {
-        string data = data_socket->receive();
+        string data = data_socket.receive();
         if (data.length() == 0) {
             break;
         }
@@ -221,9 +219,8 @@ void FTPClient::get(const string& filename) {
         length += data.length();
     }
 
-    data_socket->close();
-    delete data_socket;
-    data_socket = NULL;
+    data_socket.close();
+    data_socket = Socket();  // Reset to invalid socket
 
     resp = receiveResponse();
     out.close();
@@ -279,14 +276,13 @@ void FTPClient::put(const string& filename) {
         char buf[MAXRECV + 1];
         in.read(buf, read_sz);
         string data(buf, read_sz);
-        *data_socket << data;
+        data_socket.send(data);
         length -= read_sz;
     }
 
     in.close();
-    data_socket->close();
-    delete data_socket;
-    data_socket = NULL;
+    data_socket.close();
+    data_socket = Socket();  // Reset to invalid socket
 
     resp = receiveResponse();
 }
@@ -327,16 +323,15 @@ void FTPClient::ls(const vector<string>& flags, const vector<string>& args) {
     if (resp.code == 150) {
         // Receive directory listing
         while (true) {
-            string data = data_socket->receive();
+            string data = data_socket.receive();
             if (data.length() == 0) {
                 break;
             }
             cout << data;
         }
 
-        data_socket->close();
-        delete data_socket;
-        data_socket = NULL;
+        data_socket.close();
+        data_socket = Socket();  // Reset to invalid socket
 
         resp = receiveResponse();
     }
@@ -357,7 +352,7 @@ int FTPClient::pasv() {
         int port = FTPProtocol::extractPort(resp.message);
         if (port != -1) {
             try {
-                data_socket = new Socket(host, port);
+                data_socket = Socket(host, port);
                 return 227;
             } catch (SocketException& e) {
                 cout << "Exception occurred: " << e.description() << endl;
@@ -421,7 +416,7 @@ int FTPClient::_mkd(const string& dirname, bool print) {
 }
 
 void FTPClient::help() {
-    cout << "\n=== Cp.FTP Client Help ===" << endl;
+    cout << "\n=== FTP Client Help ===" << endl;
     cout << "\nServer Commands:" << endl;
     cout << "  get <file> [dest]    - Download file from server" << endl;
     cout << "  put <file> [dest]    - Upload file to server" << endl;
@@ -443,11 +438,11 @@ void FTPClient::help() {
 void FTPClient::sendRequest(const string& cmd, const string& args) {
     last_command = cmd;  // Store command for logging
     string request = FTPProtocol::formatRequest(cmd, args);
-    *control_socket << request;
+    control_socket.send(request);
 }
 
 FTPProtocol::Response FTPClient::receiveResponse(bool log) {
-    string data = control_socket->receive();
+    string data = control_socket.receive();
     FTPProtocol::Response resp = FTPProtocol::parseResponse(data);
 
     // Log: hh:mm:ss <Command> <Server Response>

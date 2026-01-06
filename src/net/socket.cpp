@@ -6,7 +6,7 @@
 
 using namespace std;
 
-// Default constructor
+// Khởi tạo socket mặc định với file descriptor = -1 
 Socket::Socket() : _sockfd(-1), _is_server(false) {
     memset(&_addr, 0, sizeof(_addr));
 }
@@ -21,12 +21,10 @@ Socket::Socket(int port) : _sockfd(-1), _is_server(true) {
     _addr.sin_addr.s_addr = INADDR_ANY;
     _addr.sin_port = htons(port);
 
-    // Bind socket
     if (::bind(_sockfd, (struct sockaddr*)&_addr, sizeof(_addr)) == -1) {
         throw SocketException("Failed to bind socket");
     }
 
-    // Listen for connections
     if (::listen(_sockfd, BACKLOG) == -1) {
         throw SocketException("Failed to listen on socket");
     }
@@ -49,7 +47,6 @@ Socket::Socket(const string& host, int port) : _sockfd(-1), _is_server(false) {
 
     memcpy(&_addr.sin_addr, he->h_addr_list[0], he->h_length);
 
-    // Connect to server
     if (::connect(_sockfd, (struct sockaddr*)&_addr, sizeof(_addr)) == -1) {
         throw SocketException("Failed to connect to " + host);
     }
@@ -61,16 +58,16 @@ Socket::~Socket() {
     }
 }
 
-// Move constructor
+// Khởi tạo di chuyển socket an toàn
 Socket::Socket(Socket&& other) : _sockfd(other._sockfd), _addr(other._addr), _is_server(other._is_server) {
-    other._sockfd = -1;  // Invalidate the source socket
+    other._sockfd = -1;  // Invalid socket nguồn di chuyển
 }
 
 // Move assignment operator
 Socket& Socket::operator=(Socket&& other) {
     if (this != &other) {
         // Close current socket if valid
-        if (isValid()) {
+        if (isValid()) {    
             ::close(_sockfd);
         }
 
@@ -86,12 +83,18 @@ Socket& Socket::operator=(Socket&& other) {
 }
 
 void Socket::createSocket() {
-    _sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    _sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (!isValid()) {
         throw SocketException("Failed to create socket");
     }
 
-    // Set socket options
+    // Khởi tạo tùy chọn cho socket. 
+    // Ở đây sử dụng SO_REUSEADDR để cho phép tái sử dụng địa chỉ và port ngay lập tức
+    // Trong trường hợp không có SO_REUSEADDR, ta có ví dụ sau:
+    // 1. Đang chạy FTP server ở port 21
+    // 2. Dừng server (Ctrl+C chẳng hạn)
+    // 3. Chạy lại server ngay lập tức
+    // --> Sinh ra lỗi: "Address already in use" (bind failed). Lý do là vì khi TCP connection đóng, socket vẫn ở trạng thái TIME_WAIT trong 2-4 phút để hoàn thành các tác dụng chưa xong, khi đó không thể bind lại vào port 
     int on = 1;
     if (setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) == -1) {
         throw SocketException("Failed to set socket options");
@@ -145,16 +148,6 @@ void Socket::close() {
         ::close(_sockfd);
         _sockfd = -1;
     }
-}
-
-Socket& Socket::operator<<(const string& data) {
-    send(data);
-    return *this;
-}
-
-Socket& Socket::operator>>(string& data) {
-    data = receive();
-    return *this;
 }
 
 int Socket::port() const {

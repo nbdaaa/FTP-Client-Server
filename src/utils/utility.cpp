@@ -3,32 +3,7 @@
 
 using namespace std;
 
-// This function checks whether string contain valid host address or not.
-int hostlookup(string h) {
-    const char *host = h.c_str();
-    struct sockaddr_in inaddr;
-    struct hostent *hostp;
-
-    if ((host == NULL) || (*host == '\0')) {
-        return (INADDR_ANY);
-    }
-
-    memset((char *)&inaddr, 0, sizeof inaddr);
-    // check for host address.
-    if ((int)(inaddr.sin_addr.s_addr = inet_addr(host)) == -1) {
-        if ((hostp = gethostbyname(host)) == NULL) {
-            throw SocketException(strerror(errno));
-        }
-        if (hostp->h_addrtype != AF_INET) {
-            errno = EPROTOTYPE;
-            throw SocketException(strerror(errno));
-        }
-        memcpy((char *)&inaddr.sin_addr, (char *)hostp->h_addr, sizeof(inaddr.sin_addr));
-    }
-    return (inaddr.sin_addr.s_addr);
-}
-
-// This function checks whether string represent a valid number or not.
+// Check xem có phải số không
 bool is_number(string s) {
     for (int i = 0; i < s.length(); i++)
         if (!isdigit(s[i]))
@@ -36,7 +11,7 @@ bool is_number(string s) {
     return true;
 }
 
-// This function return password given by user on console.
+// Hàm đọc vào password người dùng nhập, có cơ chế thiết lập cấu hình cho terminal để gõ không hiện lên màn hình --> bảo mật
 string getPassword() {
     termios oldt;
     tcgetattr(STDIN_FILENO, &oldt);
@@ -51,13 +26,13 @@ string getPassword() {
     return pass;
 }
 
-// This function return FileName from the complete path of file.
+// Lấy ra tên file từ vị trí cuối cùng trong đường dẫn path
 string getFileName(string str) {
     string::size_type pos = str.find_last_of("/\\");
     return str.substr(pos + 1);
 }
 
-// This function return FilePath without including FileName.
+// Lấy source path của filename không chứa filename
 string getFilePath(string str) {
     string::size_type pos = str.find_last_of("/\\");
     if (pos == string::npos) {
@@ -66,41 +41,38 @@ string getFilePath(string str) {
     return str.substr(0, pos);
 }
 
-// This Function executes system commands(pwd,cd,mkdir,popen) if they are valid otherwise return error.
+// Xử lý từng lại cmd như cd, pwd, ls,...
 string exec_cmd(string cmd_type, string cmd, int& code) {
+    // in dùng để lưu lại output của lệnh chạy trực tiếp bằng terminal
     FILE *in;
+
     char buff[2048];
+
+    // Tác dụng của stringstream data: gom toàn bộ nội dung output/thông báo trước khi trả về output cuối cùng
     stringstream data;
+    
+    // code = 1 ~ thành công, code = 0 ~ thất bại
     code = 0;
 
-    // use system function getcwd to get current working directory.
+    // Sử dụng hàm getcwd để lấy ra thư mục làm việc hiện tại
     if (cmd_type == "pwd") {
         if (getcwd(buff, sizeof(buff)) != NULL) {
             code = 1;
-            data << "\"" << buff << "\"" << endl;
+            data << "\"" << buff << "\"" << endl; // data nhận vào "path". Ví dụ: "/mnt/c/User"
         } else {
-            data << "\"Error : " << strerror(errno) << "\"" << endl;
+            data << "\"Error : " << strerror(errno) << "\"" << endl; // data nhận vào "Error: ..."
         }
     }
-    // use system function chdir to change directory.
+    // Sử dụng hàm chdir để thay đổi thư mục làm việc hiện tại
     else if (cmd_type == "cd") {
-        if (chdir(cmd.c_str()) == 0) {
+        if (chdir(cmd.c_str()) == 0) { // cmd chứa thư mục làm việc target, .c_str() để lấy ra tên dạng string
             code = 1;
             data << "Succesfully changed to directory : " << cmd << "." << endl;
         } else {
             data << "Error : " << strerror(errno) << endl;
         }
     }
-    // use system function chroot to change chroot directory.
-    else if (cmd_type == "chroot") {
-        if (chroot(cmd.c_str()) == 0) {
-            code = 1;
-            data << "Succesfully set the root directory : " << cmd << "." << endl;
-        } else {
-            data << "Error : " << strerror(errno) << endl;
-        }
-    }
-    // use system function mkdir to make new directory.
+    // Sử dụng hàm mkdir để tạo thư mục mới
     else if (cmd_type == "mkdir") {
         if (mkdir(cmd.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0) {
             code = 1;
@@ -109,7 +81,7 @@ string exec_cmd(string cmd_type, string cmd, int& code) {
             data << "Error : " << strerror(errno) << endl;
         }
     }
-    // use system function popen to get output of terminal commands.
+    // Đối với các lệnh khác (bao gồm cả lệnh ls), sử dụng hàm popen để ngầm chạy câu lệnh trực tiếp trên terminal, lấy ra output và in ra màn hình
     else {
         if (!(in = popen(cmd.c_str(), "r"))) {
             data << "Couldn't execute the command : " << cmd << endl;
@@ -129,37 +101,28 @@ string exec_cmd(string cmd_type, string cmd, int& code) {
             pclose(in);
         }
     }
-    // return result.
+
     return data.str();
 }
 
-// This function tokenizes the string on the basis of delimeters space or newline or cariage return.
+// Hàm này để phân giải tên path theo sep, ví dụ nhận vào /usr/mnt/lib với sep là "/" --> output: <"usr", "mnt", "lib">
 vector<string> tokenize(string s, string sep) {
-    // Skip delimiters at beginning.
+    // Bỏ qua sep đầu tiên
     string::size_type lastPos = s.find_first_not_of(sep, 0);
-    // Find first "non-delimiter", which will be between lastPos and pos
+    // Tìm ký tự đầu tiên không phải sep
     string::size_type pos = s.find_first_of(sep, lastPos);
     vector<string> tokens;
     while (pos != string::npos || lastPos != string::npos) {
         tokens.push_back(s.substr(lastPos, (pos - lastPos)));
-        // Skip delimiters
+
         lastPos = s.find_first_not_of(sep, pos);
-        // Find "non-delimiter", which will be between lastPos and pos
+
         pos = s.find_first_of(sep, lastPos);
     }
     return tokens;
 }
 
-string replaceAllOccurences(string str, string search, const string replace) {
-    string::size_type pos = 0;
-    while ((pos = str.find(search, pos)) != string::npos) {
-        str.replace(pos, search.length(), replace);
-        pos += replace.length();
-    }
-    return str;
-}
-
-// This Function separate the command in opcode and message.
+// Hàm parse command cho FTP Client, phân tách command name (cmd), flags và arguments (args)
 bool parseCommand(string command, string& cmd, vector<string>& flags, vector<string>& args) {
     string::size_type beginPos = command.find_first_not_of(" \r\n", 0);
     string::size_type endPos = command.find_first_of(" \r\n", beginPos);
@@ -198,9 +161,8 @@ bool parseCommand(string command, string& cmd, vector<string>& flags, vector<str
     return true;
 }
 
-// This Function separate the command in opcode and message.
+// Hàm parse command cho FTP Server, phân tách command name (cmd) và arguments (args)
 bool parseCommand(string command, string& cmd, string& args) {
-    // split command into argument and opcode.
     string::size_type beginPos = command.find_first_not_of(" \r\n", 0);
     string::size_type endPos = command.find_first_of(" \r\n", beginPos);
     cmd = command.substr(beginPos, endPos - beginPos);
@@ -215,7 +177,7 @@ bool parseCommand(string command, string& cmd, string& args) {
     return true;
 }
 
-// Get current time in hh:mm:ss format
+// Lấy thời gian hiện tại với format hh:ss:mm
 string getCurrentTime() {
     time_t now = time(0);
     struct tm* timeinfo = localtime(&now);

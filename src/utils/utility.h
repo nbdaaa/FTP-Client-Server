@@ -27,33 +27,27 @@
 
 using namespace std;
 
-// Hostname lookup
-int hostlookup(string host);
-
-// String validation
+// Kiểm tra số hợp lệ
 bool is_number(string s);
 
-// Password input (hidden)
+// Lấy password ở dạng gõ ẩn (không hiện lên màn hình)
 string getPassword();
 
-// File path utilities
+// Lấy tên file và lấy tên source
 string getFileName(string path);
 string getFilePath(string path);
 
-// System command execution
+// Thực thi theo từng cmd
 string exec_cmd(string cmd_type, string cmd, int& code);
 
-// String tokenization
+// Phân tách tên path theo sep
 vector<string> tokenize(string s, string sep);
 
-// String utilities
-string replaceAllOccurences(string str, string search, const string replace);
-
 // Command parsing
-bool parseCommand(string command, string& cmd, string& args);
-bool parseCommand(string command, string& cmd, vector<string>& flags, vector<string>& args);
+bool parseCommand(string command, string& cmd, string& args); // Server 
+bool parseCommand(string command, string& cmd, vector<string>& flags, vector<string>& args); // Client
 
-// Get current time in hh:mm:ss format
+// Lấy thời gian hiện tại với format hh:ss:mm
 string getCurrentTime();
 
 #endif

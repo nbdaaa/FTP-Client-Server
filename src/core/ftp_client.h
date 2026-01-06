@@ -20,8 +20,8 @@ private:
     string passwd;
     int port;
 
-    Socket* control_socket;
-    Socket* data_socket;
+    Socket control_socket;
+    Socket data_socket;
     string last_command;  // Track last command for logging
 
     // Server commands
