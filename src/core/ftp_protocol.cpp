@@ -30,27 +30,33 @@ string formatRequest(const string& cmd,
     return request + "\r\n";
 }
 
+
+// Hàm parseResponse(raw) nhận vào chuỗi data "raw" và tách ra thành: 
+// resp.code: mã response, resp.message: nội dung của mã
 Response parseResponse(const string& raw) {
     Response resp;
 
-    // Find first non-space character
+    // Tìm ký tự đầu tiên khác " "
     size_t beginPos = raw.find_first_not_of(" ");
-    if (beginPos == string::npos) {
-        return resp;
+    if (beginPos == string::npos) { // Nếu cả chuỗi toàn dấu cách --> trả về npos (ko có dữ liệu), reps mặc định
+        return resp; 
     }
 
-    // Check if response starts with a digit (status code)
-    if (isdigit(raw[beginPos])) {
-        size_t endPos = raw.find(" ", beginPos);
-        if (endPos != string::npos) {
+    // Kiểm tra ký tự đầu tiên sau khi bỏ space có phải số không
+    if (isdigit(raw[beginPos])) { // Nếu là số
+        size_t endPos = raw.find(" ", beginPos); // Tìm dấu cách tiếp theo
+        
+        // Nếu tìm thấy dấu cách tiếp, cắt đoạn từ beginPos đến trước dấu cách, atoi() chuyển về thành số và gán vào resp.code
+        if (endPos != string::npos) { 
             string codeStr = raw.substr(beginPos, endPos - beginPos);
             resp.code = atoi(codeStr.c_str());
+            // Lấy nốt message đằng sau status code
             beginPos = raw.find_first_not_of(" ", endPos);
             if (beginPos != string::npos) {
                 resp.message = raw.substr(beginPos);
             }
         }
-    } else {
+    } else { // Nếu không phải số, đồng nghĩa với không có status code --> resp.message được gán từ beginPos đến hết
         resp.message = raw.substr(beginPos);
     }
 

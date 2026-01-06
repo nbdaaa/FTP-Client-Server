@@ -3,7 +3,7 @@
 using namespace std;
 
 FTPServer::FTPServer(int port_number, const string& loginFile) {
-    cout << "Cp.FTP-Server Started" << endl;
+    cout << "FTP-Server Started" << endl;
     port = port_number;
     loadUsers(loginFile);
 }
@@ -45,7 +45,7 @@ void FTPServer::communicate(Socket& client) {
 
     try {
         // Send welcome message
-        sendResponse(client, 200, "(Cp.FTP v1.0)");
+        sendResponse(client, 200, "Welcome to FTP SERVER");
 
         while (true) {
             string data = client.receive();

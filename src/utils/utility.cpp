@@ -43,7 +43,9 @@ string getFilePath(string str) {
 
 // Xử lý từng lại cmd như cd, pwd, ls,...
 string exec_cmd(string cmd_type, string cmd, int& code) {
+    // in dùng để lưu lại output của lệnh chạy trực tiếp bằng terminal
     FILE *in;
+
     char buff[2048];
 
     // Tác dụng của stringstream data: gom toàn bộ nội dung output/thông báo trước khi trả về output cuối cùng

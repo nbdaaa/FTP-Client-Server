@@ -4,7 +4,7 @@ using namespace std;
 
 FTPClient::FTPClient(const string& host_name, int port_number, const string& user_name, const string& password)
     : control_socket(), data_socket() {
-    cout << "\nCp.FTP-Client Started\n" << endl;
+    cout << "\nFTP-Client Started\n" << endl;
     host = host_name;
     user = user_name;
     passwd = password;
@@ -39,7 +39,7 @@ void FTPClient::start() {
             cout << "Re-enter Password: ";
             passwd = getPassword();
             control_socket.close();
-            start();
+            start(); // Đệ quy lại chính hàm start của FTPClient
         }
     } catch (SocketException& e) {
         cout << "Exception occurred: " << e.description() << endl;
@@ -55,7 +55,7 @@ void FTPClient::communicate() {
         flags.clear();
         args.clear();
 
-        cout << "Cp.FTP > ";
+        cout << "FTP > ";
         getline(cin, command);
 
         if (!parseCommand(command, cmd, flags, args)) {
@@ -416,7 +416,7 @@ int FTPClient::_mkd(const string& dirname, bool print) {
 }
 
 void FTPClient::help() {
-    cout << "\n=== Cp.FTP Client Help ===" << endl;
+    cout << "\n=== FTP Client Help ===" << endl;
     cout << "\nServer Commands:" << endl;
     cout << "  get <file> [dest]    - Download file from server" << endl;
     cout << "  put <file> [dest]    - Upload file to server" << endl;
