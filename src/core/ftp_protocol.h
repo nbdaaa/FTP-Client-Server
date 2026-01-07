@@ -29,7 +29,6 @@ namespace FTPProtocol {
 
     // Helper functions
     int extractPort(const string& pasvResponse);
-    string formatPortCommand(const string& host, int port);
 }
 
 #endif
