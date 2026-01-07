@@ -14,23 +14,21 @@ int main(int argc, char* argv[]) {
     // Run as FTP client
     else if (argc == 3) {
         string host(argv[1]);
+        string port_str(argv[2]);
 
         // Validate IP address format and port
-        if (count(host.begin(), host.end(), '.') == 3 && is_number(argv[2]) && atoi(argv[2]) < 65536) {
-            int port = atoi(argv[2]);
+        if (validateIPAddress(host) && validatePort(port_str)) {
+            int port = atoi(port_str.c_str());
             string user, pass;
 
-            cout << "Enter User Name: ";
-            cin >> user;
-            cout << "Enter Password: ";
-            pass = getPassword();
+            getUserCredentials(user, pass);
 
             FTPClient client(host, port, user, pass);
             client.start();
             client.communicate();
         } else {
             cout << "Input incorrectly formatted." << endl;
-            cout << argv[0] << " [int].[int].[int].[int] [int(1-65536)]" << endl;
+            cout << argv[0] << " [int].[int].[int].[int] [int(1-65535)]" << endl;
         }
     }
     // Incorrect arguments

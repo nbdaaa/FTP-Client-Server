@@ -11,6 +11,20 @@ bool is_number(string s) {
     return true;
 }
 
+// Validate IP address format (xxx.xxx.xxx.xxx)
+bool validateIPAddress(const string& ip) {
+    return count(ip.begin(), ip.end(), '.') == 3;
+}
+
+// Validate port number (1-65535)
+bool validatePort(const string& port_str) {
+    if (!is_number(port_str)) {
+        return false;
+    }
+    int port = atoi(port_str.c_str());
+    return port > 0 && port < 65536;
+}
+
 // Hàm đọc vào password người dùng nhập, có cơ chế thiết lập cấu hình cho terminal để gõ không hiện lên màn hình --> bảo mật
 string getPassword() {
     termios oldt;
@@ -184,4 +198,12 @@ string getCurrentTime() {
     char buffer[9];
     strftime(buffer, sizeof(buffer), "%H:%M:%S", timeinfo);
     return string(buffer);
+}
+
+// Lấy thông tin đăng nhập từ user (username và password)
+void getUserCredentials(string& user, string& pass) {
+    cout << "Enter User Name: ";
+    cin >> user;
+    cout << "Enter Password: ";
+    pass = getPassword();
 }

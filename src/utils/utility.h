@@ -30,8 +30,17 @@ using namespace std;
 // Kiểm tra số hợp lệ
 bool is_number(string s);
 
+// Validate IP address format (xxx.xxx.xxx.xxx)
+bool validateIPAddress(const string& ip);
+
+// Validate port number (1-65535)
+bool validatePort(const string& port_str);
+
 // Lấy password ở dạng gõ ẩn (không hiện lên màn hình)
 string getPassword();
+
+// Lấy thông tin đăng nhập từ user (username và password)
+void getUserCredentials(string& user, string& pass);
 
 // Lấy tên file và lấy tên source
 string getFileName(string path);
