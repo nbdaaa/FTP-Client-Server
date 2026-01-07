@@ -67,7 +67,7 @@ void FTPClient::communicate() {
             string curr_server = pwd(false);
             string curr_local = _pwd(false);
 
-            // Handle destination directory
+            // Xử lý địa chỉ đích
             if (args.size() == 2) {
                 if (_cd(args[1], false) != 1) {
                     cout << "Destination doesn't exist. File Transfer couldn't be done." << endl;
@@ -75,7 +75,7 @@ void FTPClient::communicate() {
                 }
             }
 
-            // Handle source file path
+            // Xử lý địa chỉ nguồn
             string filePath = getFilePath(args[0]);
             if (!filePath.empty()) {
                 if (cd(filePath, false) != 250) {

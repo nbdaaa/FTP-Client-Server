@@ -43,7 +43,7 @@ private:
     // Helper methods
     void help();
     void sendRequest(const string& cmd, const string& args = "");
-    FTPProtocol::Response receiveResponse(bool log = true);
+    FTPProtocol::Response receiveResponse(bool log = true); // Set log mặc định = true tức là sẽ in ra mọi log nhận được và gửi đi
 
 public:
     FTPClient(const string& host_name, int port_number, const string& user_name, const string& password);

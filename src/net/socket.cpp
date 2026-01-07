@@ -20,6 +20,7 @@ Socket::Socket(int port) : _sockfd(-1), _is_server(true) {
     _addr.sin_family = AF_INET;
     _addr.sin_addr.s_addr = INADDR_ANY;
     _addr.sin_port = htons(port);
+    // Khi gọi bind() với sin_port = htons(0), kernel hiểu là “hãy chọn giúp một port chưa dùng được phép dùng”.
 
     if (::bind(_sockfd, (struct sockaddr*)&_addr, sizeof(_addr)) == -1) {
         throw SocketException("Failed to bind socket");
