@@ -7,6 +7,7 @@ using namespace std;
 
 namespace FTPProtocol {
 
+// Format request trong trường hợp không có flags và có duy nhất 1 tham số. VD: USER john, PASS secret, QUIT
 string formatRequest(const string& cmd, const string& args) {
     if (args.empty()) {
         return cmd + "\r\n";
@@ -14,6 +15,7 @@ string formatRequest(const string& cmd, const string& args) {
     return cmd + " " + args + "\r\n";
 }
 
+// Format request trong trường hợp có list flags và list các args. VD: LIST -la /home/user --> formatRequest("LIST", {"-la"}, {"/home/user"})
 string formatRequest(const string& cmd,
                     const vector<string>& flags,
                     const vector<string>& args) {
@@ -63,14 +65,16 @@ Response parseResponse(const string& raw) {
     return resp;
 }
 
+// Format response trả về của server
 string formatResponse(int code, const string& msg) {
     stringstream ss;
     ss << code << " " << msg << "\r\n";
     return ss.str();
 }
 
+// Hàm dùng để trích xuất số port từ response của lệnh PASV trong FTP protocol. VD: "227 Entering Passive Mode (192,168,1,100,195,10)" --> 49930 = 256*195+10
 int extractPort(const string& pasvResponse) {
-    // Find opening and closing parentheses
+    // Tìm ngoặc ()
     size_t beginPos = pasvResponse.find("(");
     size_t endPos = pasvResponse.find(")", beginPos);
 
@@ -80,7 +84,7 @@ int extractPort(const string& pasvResponse) {
 
     string portInfo = pasvResponse.substr(beginPos + 1, endPos - beginPos - 1);
 
-    // Parse h1,h2,h3,h4,p1,p2 format
+    // Parse h1,h2,h3,h4,p1,p2
     int count = 0;
     size_t pos = 0;
     string p1Str, p2Str;
@@ -112,22 +116,21 @@ int extractPort(const string& pasvResponse) {
     return -1;
 }
 
-string formatPortCommand(const string& host, int port) {
-    stringstream ss;
+// // Hàm phục vụ cho việc implement Active Mode. Hiện tại chưa cần đến
+// string formatPortCommand(const string& host, int port) {
+//     stringstream ss;
 
-    // Replace dots with commas in IP address
-    for (char c : host) {
-        if (c == '.') {
-            ss << ',';
-        } else {
-            ss << c;
-        }
-    }
+//     for (char c : host) {
+//         if (c == '.') {
+//             ss << ',';
+//         } else {
+//             ss << c;
+//         }
+//     }
 
-    // Add port as p1,p2 where port = p1*256 + p2
-    ss << ',' << (port / 256) << ',' << (port % 256);
+//     ss << ',' << (port / 256) << ',' << (port % 256);
 
-    return ss.str();
-}
+//     return ss.str();
+// }
 
 } // namespace FTPProtocol
