@@ -116,21 +116,4 @@ int extractPort(const string& pasvResponse) {
     return -1;
 }
 
-// // Hàm phục vụ cho việc implement Active Mode. Hiện tại chưa cần đến
-// string formatPortCommand(const string& host, int port) {
-//     stringstream ss;
-
-//     for (char c : host) {
-//         if (c == '.') {
-//             ss << ',';
-//         } else {
-//             ss << c;
-//         }
-//     }
-
-//     ss << ',' << (port / 256) << ',' << (port % 256);
-
-//     return ss.str();
-// }
-
 } // namespace FTPProtocol
