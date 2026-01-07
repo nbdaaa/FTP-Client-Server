@@ -40,7 +40,6 @@ private:
     // Command handlers
     void handleUser(Socket& client, ClientSession& session, const string& args);
     void handlePass(Socket& client, ClientSession& session, const string& args);
-    void handleSyst(Socket& client, ClientSession& session, const string& args);
     void handlePwd(Socket& client, ClientSession& session, const string& args);
     void handleCwd(Socket& client, ClientSession& session, const string& args);
     void handleMkd(Socket& client, ClientSession& session, const string& args);
@@ -55,7 +54,6 @@ private:
     void sendResponse(Socket& client, int code, const string& message);
     string getCurrentDir();
     bool changeDir(const string& path);
-    string getSystemInfo();
     void loadUsers(const string& loginFile);
 
     // Client communication

@@ -59,8 +59,6 @@ void FTPServer::communicate(Socket& client) {
                     handleUser(client, session, args);
                 } else if (cmd == "PASS") {
                     handlePass(client, session, args);
-                } else if (cmd == "SYST") {
-                    handleSyst(client, session, args);
                 } else if (cmd == "PWD" && session.logged_in) {
                     handlePwd(client, session, args);
                 } else if (cmd == "CWD" && session.logged_in) {
@@ -130,10 +128,6 @@ void FTPServer::handlePass(Socket& client, ClientSession& session, const string&
     } else {
         sendResponse(client, 530, "Login incorrect.");
     }
-}
-
-void FTPServer::handleSyst(Socket& client, ClientSession& session, const string& args) {
-    sendResponse(client, 215, getSystemInfo());
 }
 
 void FTPServer::handlePwd(Socket& client, ClientSession& session, const string& args) {
@@ -366,12 +360,6 @@ bool FTPServer::changeDir(const string& path) {
     int code;
     exec_cmd("cd", path, code);
     return code == 1;
-}
-
-string FTPServer::getSystemInfo() {
-    int code;
-    string response = exec_cmd("uname", "uname", code);
-    return response;
 }
 
 void FTPServer::loadUsers(const string& loginFile) {
