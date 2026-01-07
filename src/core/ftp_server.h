@@ -25,16 +25,16 @@ private:
         string password;
         string homeDir;
     };
-    map<string, User> users;
+    map<string, User> users; // Cấu trúc gồm username, password và homeDir. Bản chất sử dụng map là vì username là unique identifier nên dùng làm key tra cứu theo kiểu dictionary
 
     // Session state
     struct ClientSession {
         string username;
         bool logged_in;
         bool binary_mode;
-        Socket* data_socket;
+        Socket data_socket;
 
-        ClientSession() : logged_in(false), binary_mode(false), data_socket(NULL) {}
+        ClientSession() : logged_in(false), binary_mode(false), data_socket() {}
     };
 
     // Command handlers

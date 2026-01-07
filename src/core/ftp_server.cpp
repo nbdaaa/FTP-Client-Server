@@ -93,8 +93,8 @@ void FTPServer::communicate(Socket& client) {
         cout << "Exception occurred: " << e.description() << endl;
     }
 
-    if (session.data_socket) {
-        delete session.data_socket;
+    if (session.data_socket.isValid()) {
+        session.data_socket.close();
     }
 }
 
@@ -171,7 +171,7 @@ void FTPServer::handleMkd(Socket& client, ClientSession& session, const string& 
 }
 
 void FTPServer::handleList(Socket& client, ClientSession& session, const string& args) {
-    if (!session.data_socket) {
+    if (!session.data_socket.isValid()) {
         sendResponse(client, 425, "Use PASV first.");
         return;
     }
@@ -184,7 +184,7 @@ void FTPServer::handleList(Socket& client, ClientSession& session, const string&
         sendResponse(client, 150, "Here comes the directory listing.");
 
         try {
-            Socket data_client = session.data_socket->accept();
+            Socket data_client = session.data_socket.accept();
 
             // Send data in chunks
             int pos = 0;
@@ -206,9 +206,8 @@ void FTPServer::handleList(Socket& client, ClientSession& session, const string&
         sendResponse(client, 501, "Syntax error in parameters or arguments.");
     }
 
-    session.data_socket->close();
-    delete session.data_socket;
-    session.data_socket = NULL;
+    session.data_socket.close();
+    session.data_socket = Socket();
 }
 
 void FTPServer::handleType(Socket& client, ClientSession& session, const string& args) {
@@ -227,12 +226,12 @@ void FTPServer::handleType(Socket& client, ClientSession& session, const string&
 
 void FTPServer::handlePasv(Socket& client, ClientSession& session, const string& args) {
     try {
-        session.data_socket = new Socket(0);  // OS assigns random port
+        session.data_socket = Socket(0);  // OS assigns random port
 
         string host = client.host();
         replace(host.begin(), host.end(), '.', ',');
 
-        int data_port = session.data_socket->port();
+        int data_port = session.data_socket.port();
         stringstream port_str;
         port_str << data_port / 256 << "," << data_port % 256;
 
@@ -254,7 +253,7 @@ void FTPServer::handleStor(Socket& client, ClientSession& session, const string&
         return;
     }
 
-    if (!session.data_socket) {
+    if (!session.data_socket.isValid()) {
         sendResponse(client, 425, "Use PASV first.");
         return;
     }
@@ -268,7 +267,7 @@ void FTPServer::handleStor(Socket& client, ClientSession& session, const string&
     sendResponse(client, 150, "Ok to send data.");
 
     try {
-        Socket data_client = session.data_socket->accept();
+        Socket data_client = session.data_socket.accept();
 
         string buff;
         while (true) {
@@ -287,9 +286,8 @@ void FTPServer::handleStor(Socket& client, ClientSession& session, const string&
         sendResponse(client, 450, "Transfer failed.");
     }
 
-    session.data_socket->close();
-    delete session.data_socket;
-    session.data_socket = NULL;
+    session.data_socket.close();
+    session.data_socket = Socket();
 }
 
 void FTPServer::handleRetr(Socket& client, ClientSession& session, const string& args) {
@@ -303,7 +301,7 @@ void FTPServer::handleRetr(Socket& client, ClientSession& session, const string&
         return;
     }
 
-    if (!session.data_socket) {
+    if (!session.data_socket.isValid()) {
         sendResponse(client, 425, "Use PASV first.");
         return;
     }
@@ -322,7 +320,7 @@ void FTPServer::handleRetr(Socket& client, ClientSession& session, const string&
     sendResponse(client, 150, msg.str());
 
     try {
-        Socket data_client = session.data_socket->accept();
+        Socket data_client = session.data_socket.accept();
 
         while (length > 0) {
             int read_sz = MAXRECV < length ? MAXRECV : length;
@@ -341,9 +339,8 @@ void FTPServer::handleRetr(Socket& client, ClientSession& session, const string&
         sendResponse(client, 450, "Transfer failed.");
     }
 
-    session.data_socket->close();
-    delete session.data_socket;
-    session.data_socket = NULL;
+    session.data_socket.close();
+    session.data_socket = Socket();
 }
 
 void FTPServer::handleQuit(Socket& client, ClientSession& session, const string& args) {
