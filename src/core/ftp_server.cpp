@@ -256,7 +256,14 @@ void FTPServer::handleStor(Socket& client, ClientSession& session, const string&
         return;
     }
 
-    ofstream out(args.c_str(), ios::out | ios::binary);
+    // Tạo tên file tạm thời unique để tránh race condition khi nhiều client upload cùng tên file
+    // Format: .upload_<filename>_<PID>_<timestamp>
+    stringstream temp_filename;
+    temp_filename << ".upload_" << args << "_" << getpid() << "_" << time(NULL);
+    string temp_path = temp_filename.str();
+
+    // Ghi vào file tạm thời (mỗi client có file riêng)
+    ofstream out(temp_path.c_str(), ios::out | ios::binary);
     if (!out) {
         sendResponse(client, 550, "Create file operation failed.");
         return;
@@ -278,8 +285,21 @@ void FTPServer::handleStor(Socket& client, ClientSession& session, const string&
 
         out.close();
         data_client.close();
+
+        // Atomic rename: Chuyển file tạm thành file đích (POSIX đảm bảo operation này atomic)
+        // Nếu nhiều clients cùng rename → "last writer wins", không bị corrupt
+        if (rename(temp_path.c_str(), args.c_str()) != 0) {
+            unlink(temp_path.c_str());  // Dọn dẹp nếu rename thất bại
+            sendResponse(client, 450, "Failed to finalize upload.");
+            session.data_socket.close();
+            session.data_socket = Socket();
+            return;
+        }
+
         sendResponse(client, 226, "Transfer complete.");
     } catch (SocketException& e) {
+        out.close();
+        unlink(temp_path.c_str());  // Dọn dẹp file tạm nếu có lỗi
         cout << "Exception occurred: " << e.description() << endl;
         sendResponse(client, 450, "Transfer failed.");
     }
