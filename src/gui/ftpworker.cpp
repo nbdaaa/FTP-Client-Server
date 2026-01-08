@@ -151,10 +151,45 @@ void FTPWorker::createRemoteDirectory(const QString &path)
     try {
         emit statusMessage("Creating directory: " + path);
 
-        if (ftpClient->mkdir(path.toStdString())) {
+        std::string currentDir = ftpClient->getCurrentDirectory();
+
+        QString normalized = path;
+        while (normalized.startsWith('/')) {
+            normalized.remove(0, 1);
+        }
+
+        if (normalized.isEmpty()) {
+            emit fileTransferError("Failed to create directory: invalid name");
+            return;
+        }
+
+        QStringList parts = normalized.split('/', Qt::SkipEmptyParts);
+        bool success = true;
+
+        for (const QString &part : parts) {
+            std::string segment = part.toStdString();
+            if (ftpClient->mkdir(segment)) {
+                if (!ftpClient->changeDirectory(segment)) {
+                    success = false;
+                    break;
+                }
+            } else {
+                if (!ftpClient->changeDirectory(segment)) {
+                    success = false;
+                    break;
+                }
+            }
+        }
+
+        // Restore the original directory
+        if (!currentDir.empty()) {
+            ftpClient->changeDirectory(currentDir);
+        }
+
+        if (success) {
             emit fileTransferComplete("Directory created: " + path);
             // reload listing to reflect the new folder
-            listRemoteDirectory(path);
+            listRemoteDirectory(QString::fromStdString(currentDir));
         } else {
             emit fileTransferError("Failed to create directory: " + path);
         }

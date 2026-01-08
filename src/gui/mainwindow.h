@@ -33,6 +33,8 @@ private slots:
     void onCreateLocalFolder();
     void onCreateRemoteFolder();
     void onRenameLocal();
+    void onDeleteRemote();
+    void onRenameRemote();
     void onConnectionEstablished(const QString &message);
     void onConnectionFailed(const QString &error);
     void onRemoteListReceived(const QStringList &items);
@@ -88,6 +90,8 @@ private:
     QAction *createRemoteFolderAction;
     QAction *deleteLocalAction;
     QAction *renameLocalAction;
+    QAction *deleteRemoteAction;
+    QAction *renameRemoteAction;
 
     // FTP Client
     QString currentLocalPath;

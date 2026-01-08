@@ -108,6 +108,8 @@ void MainWindow::setupRemoteBrowser()
         contextMenu.addAction(refreshRemoteAction);
         contextMenu.addSeparator();
         contextMenu.addAction(createRemoteFolderAction);
+        contextMenu.addAction(renameRemoteAction);
+        contextMenu.addAction(deleteRemoteAction);
         contextMenu.exec(remoteBrowser->mapToGlobal(pos));
     });
 
@@ -155,6 +157,14 @@ void MainWindow::createActions()
 
     renameLocalAction = new QAction(QIcon::fromTheme("edit-rename"), "Rename", this);
     connect(renameLocalAction, &QAction::triggered, this, &MainWindow::onRenameLocal);
+
+    deleteRemoteAction = new QAction(QIcon::fromTheme("edit-delete"), "Delete (remote)", this);
+    deleteRemoteAction->setEnabled(false);
+    connect(deleteRemoteAction, &QAction::triggered, this, &MainWindow::onDeleteRemote);
+
+    renameRemoteAction = new QAction(QIcon::fromTheme("edit-rename"), "Rename (remote)", this);
+    renameRemoteAction->setEnabled(false);
+    connect(renameRemoteAction, &QAction::triggered, this, &MainWindow::onRenameRemote);
 }
 
 void MainWindow::createToolBar()
@@ -209,6 +219,8 @@ void MainWindow::setRemoteActionsEnabled(bool enabled)
 {
     refreshRemoteAction->setEnabled(enabled);
     createRemoteFolderAction->setEnabled(enabled);
+    deleteRemoteAction->setEnabled(enabled);
+    renameRemoteAction->setEnabled(enabled);
 }
 
 QString MainWindow::joinPath(const QString &base, const QString &name) const
@@ -508,16 +520,20 @@ void MainWindow::onCreateRemoteFolder()
         "Folder name:", QLineEdit::Normal, "", &ok);
 
     if (ok && !folderName.isEmpty()) {
-        QString newPath = currentRemotePath;
-        if (!newPath.endsWith('/'))
-            newPath += '/';
-        newPath += folderName;
-
-        emit requestCreateRemoteDir(newPath);
-        statusLabel->setText("Creating remote folder: " + newPath);
-        // refresh view to see the new folder once server responds
+        emit requestCreateRemoteDir(folderName);
+        statusLabel->setText("Creating remote folder: " + folderName);
         onRefreshRemote();
     }
+}
+
+void MainWindow::onDeleteRemote()
+{
+    QMessageBox::information(this, "Delete", "Remote delete is not implemented yet.");
+}
+
+void MainWindow::onRenameRemote()
+{
+    QMessageBox::information(this, "Rename", "Remote rename is not implemented yet.");
 }
 
 void MainWindow::onRenameLocal()
