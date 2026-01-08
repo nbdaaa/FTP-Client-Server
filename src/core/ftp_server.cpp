@@ -1,4 +1,5 @@
 #include "ftp_server.h"
+#include <signal.h>
 
 using namespace std;
 
@@ -14,6 +15,9 @@ FTPServer::~FTPServer() {
 void FTPServer::start() {
     cout << "Starting server on port: " << port << endl;
 
+    // Hàm xử lý process con sau khi kết thúc, tránh hiện tượng zombie process
+    signal(SIGCHLD, SIG_IGN);
+
     try {
         Socket control_socket(port);
 
@@ -26,7 +30,7 @@ void FTPServer::start() {
                     control_socket.close();
                     communicate(client_socket);
                     client_socket.close();
-                    exit(0);
+                    exit(EXIT_SUCCESS);
                 }
             } catch (SocketException& e) {
                 cout << "Exception occurred: " << e.description() << endl;
